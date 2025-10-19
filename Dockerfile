@@ -18,31 +18,8 @@ RUN pip install --no-cache-dir -e .
 # Create model cache directory
 RUN mkdir -p /root/.cache/huggingface
 
-# Pre-download models during build (using ARG for token)
-ARG HF_TOKEN
-ENV HUGGINGFACE_HUB_TOKEN=$HF_TOKEN
+# Set environment variables for model download
 ENV HF_ENDPOINT=https://hf-mirror.com
-
-# Pre-download pyannote models with error handling
-RUN python -c "\
-import os; \
-print('Starting model download...'); \
-print(f'HF_TOKEN available: {\"yes\" if os.getenv(\"HUGGINGFACE_HUB_TOKEN\") else \"no\"}'); \
-from pyannote.audio import Pipeline; \
-print('Downloading pyannote speaker diarization model...'); \
-try: \
-    pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization-3.1'); \
-    print('Model downloaded successfully'); \
-except Exception as e: \
-    print(f'Error downloading model: {e}'); \
-    print('Trying alternative model...'); \
-    try: \
-        pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization'); \
-        print('Alternative model downloaded successfully'); \
-    except Exception as e2: \
-        print(f'Error downloading alternative model: {e2}'); \
-        print('Continuing without model pre-download'); \
-"
 
 # Expose Gradio port
 EXPOSE 7860
