@@ -15,6 +15,22 @@ COPY . .
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
 
+# Create model cache directory
+RUN mkdir -p /root/.cache/huggingface
+
+# Pre-download models during build (using ARG for token)
+ARG HF_TOKEN
+ENV HUGGINGFACE_HUB_TOKEN=$HF_TOKEN
+ENV HF_ENDPOINT=https://hf-mirror.com
+
+# Pre-download pyannote models
+RUN python -c "\
+from pyannote.audio import Pipeline; \
+print('Downloading pyannote speaker diarization model...'); \
+pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization-3.1'); \
+print('Model downloaded successfully')\
+"
+
 # Expose Gradio port
 EXPOSE 7860
 
