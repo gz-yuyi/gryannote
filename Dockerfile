@@ -23,23 +23,11 @@ ARG HF_TOKEN
 ENV HUGGINGFACE_HUB_TOKEN=$HF_TOKEN
 ENV HF_ENDPOINT=https://hf-mirror.com
 
-# Test HF token and pre-download pyannote models with error handling
+# Pre-download pyannote models with error handling
 RUN python -c "\
 import os; \
-from huggingface_hub import HfApi; \
-print('Testing HF token...'); \
-token = os.getenv('HUGGINGFACE_HUB_TOKEN'); \
-if not token or token == '': \
-    raise Exception('HF_TOKEN not set or empty'); \
-print(f'Token length: {len(token)}'); \
-api = HfApi(); \
-user_info = api.whoami(token=token); \
-print(f'Authenticated as: {user_info.get(\"name\", \"unknown\")}'); \
-print('Token is valid, downloading models...'); \
-"
-
-# Pre-download pyannote models
-RUN python -c "\
+print('Starting model download...'); \
+print(f'HF_TOKEN available: {\"yes\" if os.getenv(\"HUGGINGFACE_HUB_TOKEN\") else \"no\"}'); \
 from pyannote.audio import Pipeline; \
 print('Downloading pyannote speaker diarization model...'); \
 try: \
@@ -48,8 +36,12 @@ try: \
 except Exception as e: \
     print(f'Error downloading model: {e}'); \
     print('Trying alternative model...'); \
-    pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization'); \
-    print('Alternative model downloaded successfully'); \
+    try: \
+        pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization'); \
+        print('Alternative model downloaded successfully'); \
+    except Exception as e2: \
+        print(f'Error downloading alternative model: {e2}'); \
+        print('Continuing without model pre-download'); \
 "
 
 # Expose Gradio port
